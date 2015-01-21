@@ -5,6 +5,10 @@
 //  Created by Jordan Conner on 1/20/15.
 //  Copyright (c) 2015 Jordan Conner. All rights reserved.
 //
+//  Two methods of JSON request/response are shown
+//  The first method jsonW3Schools() shows a urlSession which implements an asynchronous task in a closure
+//  The second method jsonGeocode() shows a NSString "contentsOfURL" to grab the raw JSON html (simpler)
+//  Both methods then use the same NSJSONSerialization to parse the JSON
 
 import UIKit
 
