@@ -10,19 +10,33 @@ import UIKit
 
 class ViewController: UIViewController {
 
+    // Handle JSON Stuff
+    
+    let urlString = "http://www.w3schools.com/website/Customers_MYSQL.php"
+    let urlSession = NSURLSession.sharedSession()
+    var restaurants : [NSDictionary] = []
+    
+    // Google Maps Marker Info
+    var lat : [Double] = []
+    var lng : [Double] = []
+    var name : [String] = []
+    var snippet : [String] = []
+    
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
-        // Handle JSON Stuff
+        jsonW3Schools()
+        jsonGeocode()
+        googleMaps()
         
-        let urlString = "http://www.w3schools.com/website/Customers_MYSQL.php"
+    }
+    
+    func jsonW3Schools() {
+        // Handle w3 json
+        
         let url = NSURL(string: urlString)!
-        let urlSession = NSURLSession.sharedSession()
-        var restaurants : [NSDictionary] = []
-        var lat : [Double] = []
-        var long : [Double] = []
-        
         let jsonQuery = urlSession.dataTaskWithURL(url, completionHandler: {data, response, error -> Void in
             if (error != nil) {
                 println(error.localizedDescription)
@@ -34,22 +48,16 @@ class ViewController: UIViewController {
                 println("JSON Error \(err!.localizedDescription)")
             }
             
-            // Print # of objects in our json result dictionary array
-            //println(jsonResult.count)
-            restaurants = jsonResult
+            self.restaurants = jsonResult
             
             dispatch_async(dispatch_get_main_queue(), {
                 //println(jsonResult[0]["Name"]!)
-                //println(jsonResult[0]["City"]!)
-                //println(jsonResult[0]["Country"]!)
             })
         })
         jsonQuery.resume()
-        
-        
-        
-        
-        
+    }
+    
+    func jsonGeocode() {
         // Handle Geocode JSON to lookup lat/longs
         
         while restaurants.count == 0 {
@@ -63,22 +71,22 @@ class ViewController: UIViewController {
             let urlString2WithEncoding = urlString2.stringByAddingPercentEscapesUsingEncoding(NSUTF8StringEncoding)
             let url2 = NSURL(string: urlString2WithEncoding!)
             var error: NSError?
+            
             let jsonDataString = NSString(contentsOfURL: url2!, encoding: NSUTF8StringEncoding, error: &error)
-            
-            //println(jsonDataString)
             let jsonData = jsonDataString?.dataUsingEncoding(NSUTF8StringEncoding)
+            let jsonDict = NSJSONSerialization.JSONObjectWithData(jsonData!, options: nil, error: &error) as NSDictionary
             
-            var error2: NSError?
-            let jsonDict = NSJSONSerialization.JSONObjectWithData(jsonData!, options: nil, error: &error2) as NSDictionary
-            println(jsonDict["results"])
-            // TODO PARSE OUT THE LAT AND LONGS INTO PARALLEL ARRAYS TO LATER USE FOR GOOGLE MAP PINS
+            let latString: AnyObject! = jsonDict.valueForKeyPath("results.geometry.location.lat")![0]
+            let lngString: AnyObject! = jsonDict.valueForKeyPath("results.geometry.location.lng")![0]
+            
+            lat.append(latString.doubleValue)
+            lng.append(lngString.doubleValue)
+            name.append(restaurants[x]["Name"] as String)
+            snippet.append("\(curCity), \(curCountry)")
         }
-        
-        
-        
-        
-        
-        
+    }
+    
+    func googleMaps() {
         // Handle Google Maps Stuff
         
         var camera = GMSCameraPosition.cameraWithLatitude(-33.86,
@@ -87,19 +95,18 @@ class ViewController: UIViewController {
         mapView.myLocationEnabled = true
         self.view = mapView
         
-        var marker = GMSMarker()
-        marker.position = CLLocationCoordinate2DMake(-33.86, 151.20)
-        marker.title = "Sydney"
-        marker.snippet = "Australia"
-        marker.map = mapView
-        
+        for var x = 0; x < lat.count; x++ {
+            var marker = GMSMarker()
+            marker.position = CLLocationCoordinate2DMake(lat[x], lng[x])
+            marker.title = name[x]
+            marker.snippet = snippet[x]
+            marker.map = mapView
+        }
     }
-
+    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-
-
 }
 
